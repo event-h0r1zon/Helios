@@ -1,5 +1,6 @@
 #include "raylib.h"
 #include "rlImGui.h"
+#include "imgui.h"
 #include "physics/KeplerianSolver.hpp"
 #include "rendering/Visualizer.hpp"
 #include "ui/GUIController.hpp"
@@ -24,8 +25,8 @@ int main(int argc, char* argv[]) {
 
     MaximizeWindow();
 
-    SetTargetFPS(60);
     rlImGuiSetup(true);
+    ImGui::GetIO().IniFilename = nullptr; // Disable imgui.ini generation
 
     KeplerianElements orbit = {
         10,
