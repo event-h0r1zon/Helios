@@ -2,7 +2,23 @@
 
 An orbital mechanics simulator and visualizer built in C++ using **Raylib** for 3D graphics and **Dear ImGui** (via `rlImGui`) for the user interface.
 
-## Prerequisites
+## Installation (Quick Install)
+
+For Linux users, you can install the latest pre-compiled version of Helios directly using our installation script. This script automatically checks your system, downloads the correct binary, and places it in your path:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/event-h0r1zon/Helios/main/install.sh | bash
+```
+
+Once installed, you can launch the program from anywhere in your terminal by simply typing:
+
+```bash
+helios
+```
+
+*(Note: If you install without root permissions, make sure `~/.local/bin` is in your shell's `PATH` variable).*
+
+## Development (Prerequisites)
 
 To compile and run this project, you need a C++20 compiler, CMake, and the standard windowing/graphical development libraries.
 
