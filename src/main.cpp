@@ -7,7 +7,7 @@
 #include <iostream>
 #include <string_view>
 
-constexpr std::string_view HELIOS_VERSION = "0.0.1";
+constexpr std::string_view HELIOS_VERSION = "0.0.2";
 
 int main(int argc, char* argv[]) {
     if (argc > 1) {
