@@ -8,6 +8,9 @@ on:
 permissions:
   contents: write # Allows the workflow to create releases and upload files
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
