@@ -40,3 +40,6 @@
 # debug information files
 *.dwo
 build/
+
+# Agent related files
+.antigravitycli
