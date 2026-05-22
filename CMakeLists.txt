@@ -59,8 +59,15 @@ target_link_libraries(rlImGui PUBLIC raylib)
 # ==============================================================================
 # 5. Define your executable
 # ==============================================================================
-add_executable(Helios src/main.cpp)
+add_executable(
+    Helios
+    src/main.cpp
+    src/physics/KeplerianSolver.cpp
+    src/rendering/Visualizer.cpp
+    src/ui/GUIController.cpp
+)
 
+target_include_directories(Helios PRIVATE src)
 target_link_libraries(Helios PRIVATE rlImGui)
 
 set_target_properties(Helios PROPERTIES
