@@ -1,0 +1,57 @@
+name: Build and Release Helios
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger this workflow only when you push a tag starting with "v" (e.g. v1.0.0, v0.2-beta)
+
+permissions:
+  contents: write # Allows the workflow to create releases and upload files
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Check out the source code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2. Install Linux system packages required by Raylib & GLFW
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake \
+            build-essential \
+            libx11-dev \
+            libxrandr-dev \
+            libxinerama-dev \
+            libxcursor-dev \
+            libxi-dev \
+            libgl1-mesa-dev \
+            libglu1-mesa-dev \
+            libasound2-dev
+
+      # 3. Configure CMake in Release mode
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      # 4. Compile the project
+      - name: Build Helios
+        run: cmake --build build --config Release
+
+      # 5. Prepare the release asset folder and rename the binary
+      - name: Package Binary
+        run: |
+          mkdir -p dist
+          # Copy binary from build/bin/Helios to dist/ and rename it to represent target platform
+          cp build/bin/Helios dist/helios-linux-x86_64
+
+      # 6. Create the GitHub Release and upload the file
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/helios-linux-x86_64
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

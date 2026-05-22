@@ -3,8 +3,19 @@
 #include "physics/KeplerianSolver.hpp"
 #include "rendering/Visualizer.hpp"
 #include "ui/GUIController.hpp"
+#include <iostream>
+#include <string_view>
 
-int main() {
+constexpr std::string_view HELIOS_VERSION = "0.0.1";
+
+int main(int argc, char* argv[]) {
+    if (argc > 1) {
+        std::string_view arg = argv[1];
+        if (arg == "--version" || arg == "-v") {
+            std::cout << HELIOS_VERSION << std::endl;
+            return 0;
+        }
+    }
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_WINDOW_MAXIMIZED);
 
@@ -23,7 +34,7 @@ int main() {
         0.0,
         0.0
     };
-    
+
     Visualizer visualizer;
     GUIController gui;
 
