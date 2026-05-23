@@ -29,18 +29,19 @@ int main(int argc, char* argv[]) {
     ImGui::GetIO().IniFilename = nullptr; // Disable imgui.ini generation
 
     KeplerianElements orbit = {
-        10,
-        0.5,
-        0.0,
-        0.0,
-        0.0
+        7000.0, // Semi-major axis in km (approx 620 km altitude)
+        0.05,   // Eccentricity
+        28.5,   // Inclination in degrees
+        0.0,    // Argument of periapsis in degrees
+        0.0,    // RAAN in degrees
+        0.0     // Mean anomaly at epoch
     };
 
     Visualizer visualizer;
     GUIController gui;
 
     while(!WindowShouldClose()) {
-        visualizer.updateOrbitPoints(orbit);
+        visualizer.update(orbit);
 
         BeginDrawing();
         ClearBackground(DARKGRAY);

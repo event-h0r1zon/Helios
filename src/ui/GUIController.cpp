@@ -1,5 +1,6 @@
 #include "GUIController.hpp"
 #include "imgui.h"
+#include "physics/Constants.hpp"
 
 // Helper function to draw a linked slider and input box on the same line
 bool DrawLinkedInput(const char* label, double& value, float minVal, float maxVal, const char* format) {
@@ -48,16 +49,20 @@ void GUIController::draw(KeplerianElements& elements) {
             DrawLinkedInput(
                 "Semi-Major Axis (a) [km]", 
                 elements.a, 
-                1.0f, 
-                50.0f, 
-                "%.2f"
+                6500.0f, 
+                100000.0f, 
+                "%.1f"
             );
+            
+            float maxE = 1.0f - static_cast<float>(
+                Helios::Physics::EARTH_RADIUS_KM / elements.a
+            ); // Prevent orbit from intersecting Earth
             
             DrawLinkedInput(
                 "Eccentricity (e)", 
                 elements.e, 
                 0.0f, 
-                0.9f, 
+                maxE, 
                 "%.3f"
             );
             

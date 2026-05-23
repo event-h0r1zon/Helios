@@ -21,6 +21,6 @@ Matrix3x3 operator*(const Matrix3x3& A, const Matrix3x3& B) {
 }
 
 double KeplerianSolver::solve(const KeplerianElements& elements, double time) {
-
+    
     return 0.0;
 }

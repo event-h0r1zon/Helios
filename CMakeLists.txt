@@ -67,6 +67,8 @@ add_executable(
     src/ui/GUIController.cpp
 )
 
+file(COPY assets DESTINATION "${CMAKE_BINARY_DIR}/bin")
+
 target_include_directories(Helios PRIVATE src)
 target_link_libraries(Helios PRIVATE rlImGui)
 
