@@ -21,6 +21,10 @@ class Visualizer {
         bool hasPreviousTimeScale = false;
         KeplerianElements previousElements;
         double previousTimeScale = 0.0;
+
+        Texture2D earthTexture;
+        bool show2DMap = false;
+        bool isEarthHovered = false;
     public:
         Visualizer();
 
@@ -28,7 +32,8 @@ class Visualizer {
         void update(
             const KeplerianElements& elements, 
             double timeScale, 
-            size_t groundTrackPoints
+            size_t groundTrackPoints,
+            const Camera3D& camera
         );
         void render(const Camera3D& camera, const KeplerianElements& elements);
 };

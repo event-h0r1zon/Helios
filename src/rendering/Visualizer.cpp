@@ -58,7 +58,7 @@ Visualizer::Visualizer() {
     earthModel = LoadModelFromMesh(earthMesh);
     earthModel.transform = MatrixRotateX(90.0f * DEG2RAD);
     std::string texturePath = ResolveAssetPath("earth.png");
-    Texture2D earthTexture = LoadTexture(texturePath.c_str());
+    earthTexture = LoadTexture(texturePath.c_str());
     earthModel.materials[0].maps[MATERIAL_MAP_ALBEDO].texture = earthTexture;
 }
 
@@ -167,8 +167,27 @@ void Visualizer::updateOrbitPoints(const KeplerianElements& elements) {
 void Visualizer::update(
     const KeplerianElements& elements, 
     double timeScale,
-    size_t groundTrackPoints
+    size_t groundTrackPoints,
+    const Camera3D& camera
 ) {
+    // Handle Esc key to return to 3D mode
+    if (show2DMap && IsKeyPressed(KEY_ESCAPE)) {
+        show2DMap = false;
+    }
+
+    // Hover detection on the Earth sphere (radius 1.0f at origin)
+    isEarthHovered = false;
+    if (!show2DMap && !ImGui::GetIO().WantCaptureMouse) {
+        Ray ray = GetMouseRay(GetMousePosition(), camera);
+        RayCollision collision = GetRayCollisionSphere(ray, Vector3{ 0.0f, 0.0f, 0.0f }, 1.0f);
+        if (collision.hit) {
+            isEarthHovered = true;
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                show2DMap = true;
+            }
+        }
+    }
+
     // Clear ground track when orbital elements change
     if (!hasPreviousElements && !hasPreviousTimeScale) {
         previousElements = elements;
@@ -208,8 +227,17 @@ void Visualizer::update(
     Helios::Math::Vector3D worldPos = rotation * localPos;
     spacecraftPosition = worldPos;
 
+    // Convert ECI worldPos to ECEF for rotation-corrected ground track
+    double cosAngle = std::cos(earthRotationAngle);
+    double sinAngle = std::sin(earthRotationAngle);
+    Helios::Math::Vector3D ecefPos = {
+        worldPos.x * cosAngle + worldPos.y * sinAngle,
+        -worldPos.x * sinAngle + worldPos.y * cosAngle,
+        worldPos.z
+    };
+
     // Update the ground track.
-    groundTrack.push_back(worldPos);
+    groundTrack.push_back(ecefPos);
     if (groundTrack.size() > groundTrackPoints) 
         groundTrack.erase(
             groundTrack.begin(), 
@@ -219,6 +247,92 @@ void Visualizer::update(
 }
 
 void Visualizer::render(const Camera3D& camera, const KeplerianElements& elements) {
+    if (show2DMap) {
+        // Render flat 2D Map view
+        ClearBackground(BLACK);
+
+        int screenWidth = GetScreenWidth();
+        int screenHeight = GetScreenHeight();
+
+        // Maintain 1:2 aspect ratio for the rotated flat map (width is half of height)
+        float mapWidth = (float)screenWidth;
+        float mapHeight = mapWidth / 2.0f;
+        if (mapHeight > (float)screenHeight) {
+            mapHeight = (float)screenHeight;
+            mapWidth = mapHeight * 2.0f;
+        }
+
+        float mapX = ((float)screenWidth - mapWidth) / 2.0f;
+        float mapY = ((float)screenHeight - mapHeight) / 2.0f;
+
+        Rectangle destRec = { mapX + mapWidth, mapY, mapHeight, mapWidth };
+        DrawTexturePro(
+            earthTexture,
+            Rectangle{ 0.0f, 0.0f, (float)earthTexture.width, -(float)earthTexture.height },
+            destRec,
+            Vector2{ 0.0f, 0.0f },
+            90.0f,
+            WHITE
+        );
+
+        // Draw a nice border around the map
+        DrawRectangleLinesEx(Rectangle{ mapX, mapY, mapWidth, mapHeight }, 3.0f, DARKGRAY);
+
+        // Draw projected ground track points
+        if (!groundTrack.empty()) {
+            std::vector<Vector2> projected2D;
+            projected2D.reserve(groundTrack.size());
+
+            std::vector<double> longitudes;
+            longitudes.reserve(groundTrack.size());
+
+            for (const auto& ecefPt : groundTrack) {
+                double dist = std::sqrt(ecefPt.x * ecefPt.x + ecefPt.y * ecefPt.y + ecefPt.z * ecefPt.z);
+                if (dist > 0.0f) {
+                    double lon = std::atan2(ecefPt.y, ecefPt.x); // -PI to +PI
+                    double lat = std::asin(ecefPt.z / dist);      // -PI/2 to +PI/2
+
+                    // Calculate screen coordinates based on standard equirectangular mapping
+                    float x = mapX + mapWidth * static_cast<float>((lon + M_PI) / (2.0 * M_PI));
+                    float y = mapY + mapHeight * static_cast<float>((M_PI / 2.0 - lat) / M_PI);
+
+                    projected2D.push_back(Vector2{ x, y });
+                    longitudes.push_back(lon);
+                }
+            }
+
+            // Draw the ground track lines with anti-meridian wrap-around check
+            for (size_t i = 0; i < projected2D.size() - 1; ++i) {
+                if (std::abs(longitudes[i + 1] - longitudes[i]) < M_PI) {
+                    DrawLineEx(projected2D[i], projected2D[i + 1], 2.5f, RED);
+                }
+            }
+
+            // Draw a marker for the current satellite position
+            if (!projected2D.empty()) {
+                DrawCircleV(projected2D.back(), 5.0f, GREEN);
+                DrawCircleLinesV(projected2D.back(), 7.0f, WHITE);
+            }
+        }
+
+        // Draw a clean UI Header & "Back to 3D" button
+        DrawRectangle(0, 0, screenWidth, 60, ColorAlpha(BLACK, 0.6f));
+        DrawText("Earth Ground Track (2D Equirectangular Projection)", 20, 20, 20, RAYWHITE);
+
+        // Back Button
+        Rectangle backBtn = { (float)screenWidth - 160.0f, 15.0f, 130.0f, 32.0f };
+        bool hovered = CheckCollisionPointRec(GetMousePosition(), backBtn);
+        DrawRectangleRec(backBtn, hovered ? RED : DARKGRAY);
+        DrawRectangleLinesEx(backBtn, 1.5f, RAYWHITE);
+        DrawText("Back to 3D", (int)backBtn.x + 18, (int)backBtn.y + 7, 16, RAYWHITE);
+
+        if (hovered && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+            show2DMap = false;
+        }
+
+        return;
+    }
+
     BeginMode3D(camera);
         
         rlPushMatrix();
@@ -228,9 +342,16 @@ void Visualizer::render(const Camera3D& camera, const KeplerianElements& element
         
         DrawModel(earthModel, Vector3{ 0.0f, 0.0f, 0.0f }, 1.0f, WHITE);
 
+        if (isEarthHovered) {
+            rlDisableDepthMask();
+            DrawSphereWires(Vector3{0.0f, 0.0f, 0.0f}, 1.06f, 16, 16, Color{0, 200, 255, 100});
+            DrawSphere(Vector3{0.0f, 0.0f, 0.0f}, 1.06f, Color{0, 200, 255, 35});
+            rlEnableDepthMask();
+        }
+
         DrawSphere(
             toRaylibVector(spacecraftPosition),
-            0.02f,
+            0.05f,
             GREEN
         );
 
@@ -274,7 +395,16 @@ void Visualizer::render(const Camera3D& camera, const KeplerianElements& element
             std::vector<Vector3> projectedPoints;
             projectedPoints.reserve(groundTrack.size());
 
-            for (const auto& pt : groundTrack) {
+            double cosAngle = std::cos(earthRotationAngle);
+            double sinAngle = std::sin(earthRotationAngle);
+
+            for (const auto& ecefPt : groundTrack) {
+                // Rotate ECEF point back to ECI
+                Helios::Math::Vector3D pt = {
+                    ecefPt.x * cosAngle - ecefPt.y * sinAngle,
+                    ecefPt.x * sinAngle + ecefPt.y * cosAngle,
+                    ecefPt.z
+                };
                 Vector3 r = toRaylibVector(pt);
                 float dist = Vector3Length(r);
                 if (dist > 0.0f) {

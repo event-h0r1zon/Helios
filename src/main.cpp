@@ -55,7 +55,8 @@ int main(int argc, char* argv[]) {
         visualizer.update(
             orbit, 
             gui.getTimeScale(),
-            gui.getGroundTrackPoints()
+            gui.getGroundTrackPoints(),
+            camera
         );
 
         BeginDrawing();
