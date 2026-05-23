@@ -64,6 +64,7 @@ add_executable(
     src/main.cpp
     src/physics/KeplerianSolver.cpp
     src/rendering/Visualizer.cpp
+    src/rendering/CameraController.cpp
     src/ui/GUIController.cpp
 )
 

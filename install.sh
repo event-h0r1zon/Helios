@@ -24,8 +24,13 @@ fi
 # 2. Check currently installed version
 CURRENT_VERSION="0.0.0"
 if command -v "$BINARY_NAME" &> /dev/null; then
-    CURRENT_VERSION=$("$BINARY_NAME" --version | sed 's/^v//')
-    echo "Found local installation: v$CURRENT_VERSION"
+    # Run version check safely in case the installed binary is corrupted
+    if CURRENT_VERSION=$("$BINARY_NAME" --version 2>/dev/null | sed 's/^v//') && [ -n "$CURRENT_VERSION" ]; then
+        echo "Found local installation: v$CURRENT_VERSION"
+    else
+        CURRENT_VERSION="0.0.0"
+        echo "Warning: Local installation is corrupted or unexecutable. Overwriting..."
+    fi
 fi
 
 # 3. Retrieve latest release info from GitHub API

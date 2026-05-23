@@ -4,20 +4,31 @@
 #include "physics/KeplerianSolver.hpp"
 
 struct NodeBounds {
-    Vector3D descending;
-    Vector3D ascending;
+    Helios::Math::Vector3D descending;
+    Helios::Math::Vector3D ascending;
 };
 
 class Visualizer {
     private:
-        Camera3D camera;
+        Helios::Math::Vector3D spacecraftPosition;
+        std::vector<Helios::Math::Vector3D> groundTrack; // Ground track projection.
         Model earthModel;
-        std::vector<Vector3D> orbitPoints;
+        std::vector<Helios::Math::Vector3D> orbitPoints;
         NodeBounds bounds; // Relevant for the line of nodes.
+        Helios::Math::Matrix3x3 rotation;
+        float earthRotationAngle = 0.0f;
+        bool hasPreviousElements = false;
+        bool hasPreviousTimeScale = false;
+        KeplerianElements previousElements;
+        double previousTimeScale = 0.0;
     public:
         Visualizer();
 
         void updateOrbitPoints(const KeplerianElements& elements);
-        void update(const KeplerianElements& elements);
-        void render(const KeplerianElements& elements);
+        void update(
+            const KeplerianElements& elements, 
+            double timeScale, 
+            size_t groundTrackPoints
+        );
+        void render(const Camera3D& camera, const KeplerianElements& elements);
 };

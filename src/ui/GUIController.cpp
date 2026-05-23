@@ -101,6 +101,32 @@ void GUIController::draw(KeplerianElements& elements) {
             ImGui::EndTabItem();
         }
 
+        // Tab 2: Simulation Controls
+        if (ImGui::BeginTabItem("Simulation Controls")) {
+            ImGui::Spacing();
+            ImGui::TextColored(ImVec4(0.0f, 0.8f, 1.0f, 1.0f), "Time Control");
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            DrawLinkedInput(
+                "Time Scale (N/A)", 
+                timeScale, 
+                1.0f, 
+                10000.0f, 
+                "%.1f"
+            );
+
+            DrawLinkedInput(
+                "Ground Track Points", 
+                groundTrackPoints, 
+                1000.0f, 
+                50000.0f, 
+                "%.0f"
+            );
+
+            ImGui::EndTabItem();
+        }
+
         ImGui::EndTabBar();
     }
 

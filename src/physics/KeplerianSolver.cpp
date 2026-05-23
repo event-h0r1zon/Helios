@@ -1,5 +1,8 @@
 #include "KeplerianSolver.hpp"
 #include <cmath>
+#include "physics/Constants.hpp"
+
+namespace Helios::Math {
 
 Vector3D operator*(const Matrix3x3& mat, const Vector3D& vec) {
     Vector3D result;
@@ -20,7 +23,26 @@ Matrix3x3 operator*(const Matrix3x3& A, const Matrix3x3& B) {
     return result;
 }
 
+} // namespace Helios::Math
+
 double KeplerianSolver::solve(const KeplerianElements& elements, double time) {
+    double n = std::sqrt(Helios::Physics::EARTH_MU / std::pow(elements.a, 3)); // Mean motion
     
-    return 0.0;
+    double M0_rad = elements.M0 * M_PI / 180.0; // Convert mean anomaly to radians
+    double M = M0_rad + n * time; // Mean anomaly at time t
+    M = std::fmod(M, 2.0 * M_PI); // Normalize to [0, 2π]
+
+    if (M < 0) M += 2.0 * M_PI; // Ensure M is positive
+
+    double E = M; // Initial guess for eccentric anomaly
+    for (int iter = 0; iter < 100; ++iter) {
+        double deltaE = (E - elements.e * std::sin(E) - M) / (1 - elements.e * std::cos(E));
+        E -= deltaE;
+        if (std::abs(deltaE) < 1e-8) break;
+    }
+
+    double theta = 2.0 * std::atan2(std::sqrt(1 + elements.e) * 
+        std::sin(E / 2), std::sqrt(1 - elements.e) * std::cos(E / 2));
+
+    return theta;
 }
