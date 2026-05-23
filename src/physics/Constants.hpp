@@ -8,5 +8,6 @@ namespace Helios::Physics {
     
     // Astrodynamics constants
     constexpr double EARTH_MU = 398600.4418;               // Standard gravitational parameter (km^3/s^2)
-    constexpr double EARTH_ROTATION_SPEED = 7.2921159e-5;  // Rotation speed relative to stars (rad/s)
+    constexpr double EARTH_ROTATION_SPEED = 7.2921159e-5;  // Angular velocity magnitude (rad/s)
+    
 }
