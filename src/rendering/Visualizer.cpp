@@ -5,6 +5,41 @@
 #include "imgui.h"
 #include "physics/Constants.hpp"
 #include <cmath>
+#include <string>
+#include <cstdlib>
+
+static std::string ResolveAssetPath(const std::string& filename) {
+    // 1. Check relative to current working directory (for local dev in project root)
+    std::string pathCwd = "assets/" + filename;
+    if (FileExists(pathCwd.c_str())) {
+        return pathCwd;
+    }
+
+    // 2. Check relative to executable directory (for local runs from build output)
+    std::string exeDir = GetApplicationDirectory();
+    std::string pathExe = exeDir + "assets/" + filename;
+    if (FileExists(pathExe.c_str())) {
+        return pathExe;
+    }
+
+    // 3. Check user shared data directory (FHS standard: ~/.local/share/helios/assets/)
+    const char* home = std::getenv("HOME");
+    if (home != nullptr) {
+        std::string pathUserShare = std::string(home) + "/.local/share/helios/assets/" + filename;
+        if (FileExists(pathUserShare.c_str())) {
+            return pathUserShare;
+        }
+    }
+
+    // 4. Check global system shared data directory (FHS standard: /usr/local/share/helios/assets/)
+    std::string pathSystemShare = "/usr/local/share/helios/assets/" + filename;
+    if (FileExists(pathSystemShare.c_str())) {
+        return pathSystemShare;
+    }
+
+    // Fallback to default relative path
+    return "assets/" + filename;
+}
 
 Visualizer::Visualizer() {
     // Position the camera slightly elevated and back from the center
@@ -35,7 +70,9 @@ Visualizer::Visualizer() {
 
     // Upload the modified mesh to the GPU and load it into a Model
     earthModel = LoadModelFromMesh(earthMesh);
-    Texture2D earthTexture = LoadTexture("assets/earth.png");
+    earthModel.transform = MatrixRotateX(90.0f * DEG2RAD);
+    std::string texturePath = ResolveAssetPath("earth.png");
+    Texture2D earthTexture = LoadTexture(texturePath.c_str());
     earthModel.materials[0].maps[MATERIAL_MAP_ALBEDO].texture = earthTexture;
 }
 

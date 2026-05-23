@@ -44,17 +44,19 @@ jobs:
       - name: Build Helios
         run: cmake --build build --config Release
 
-      # 5. Prepare the release asset folder and rename the binary
-      - name: Package Binary
+      # 5. Prepare the release asset folder and bundle assets
+      - name: Package Release
         run: |
+          mkdir -p helios-release/assets
+          cp build/bin/Helios helios-release/helios
+          cp -r assets/* helios-release/assets/
           mkdir -p dist
-          # Copy binary from build/bin/Helios to dist/ and rename it to represent target platform
-          cp build/bin/Helios dist/helios-linux-x86_64
+          tar -czf dist/helios-linux-x86_64.tar.gz -C helios-release .
 
-      # 6. Create the GitHub Release and upload the file
+      # 6. Create the GitHub Release and upload the packaged tarball
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/helios-linux-x86_64
+          files: dist/helios-linux-x86_64.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

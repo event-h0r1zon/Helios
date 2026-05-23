@@ -49,26 +49,48 @@ version_gt() {
 if ! command -v "$BINARY_NAME" &> /dev/null || version_gt "$LATEST_VERSION" "$CURRENT_VERSION"; then
     echo "Downloading and installing v$LATEST_VERSION..."
 
-    # Extract the download link for the Linux binary
-    DOWNLOAD_URL=$(echo "$LATEST_RELEASE_JSON" | grep -o -E '"browser_download_url": "[^"]+linux[^"]*"' | head -n 1 | cut -d'"' -f4)
+    # Extract the download link for the Linux binary tarball
+    DOWNLOAD_URL=$(echo "$LATEST_RELEASE_JSON" | grep -o -E '"browser_download_url": "[^"]+linux[^"]+\.tar\.gz"' | head -n 1 | cut -d'"' -f4)
 
     if [ -z "$DOWNLOAD_URL" ]; then
-        echo "Error: Could not find a suitable Linux release binary on GitHub."
+        echo "Error: Could not find a suitable Linux release binary tarball on GitHub."
         exit 1
     fi
 
-    # Download to temporary location
-    TEMP_FILE=$(mktemp)
-    curl -L -o "$TEMP_FILE" "$DOWNLOAD_URL"
+    # Create temporary file and directory
+    TEMP_TAR=$(mktemp)
+    TEMP_DIR=$(mktemp -d)
+
+    # Download tarball
+    curl -L -o "$TEMP_TAR" "$DOWNLOAD_URL"
+
+    # Extract tarball
+    tar -xzf "$TEMP_TAR" -C "$TEMP_DIR"
 
     # Remove old binary
     if [ -f "$INSTALL_DIR/$BINARY_NAME" ]; then
         rm -f "$INSTALL_DIR/$BINARY_NAME"
     fi
 
-    # Move new binary into place & make it executable
-    mv "$TEMP_FILE" "$INSTALL_DIR/$BINARY_NAME"
+    # Copy new binary into place & make it executable
+    cp "$TEMP_DIR/helios" "$INSTALL_DIR/$BINARY_NAME"
     chmod +x "$INSTALL_DIR/$BINARY_NAME"
+
+    # Determine standard share directory for assets
+    if [ "$INSTALL_DIR" = "/usr/local/bin" ]; then
+        SHARE_DIR="/usr/local/share/helios/assets"
+    else
+        SHARE_DIR="$HOME/.local/share/helios/assets"
+    fi
+
+    # Recreate target directory and copy assets
+    rm -rf "$SHARE_DIR"
+    mkdir -p "$SHARE_DIR"
+    cp -r "$TEMP_DIR/assets/"* "$SHARE_DIR/"
+
+    # Cleanup temporary locations
+    rm -f "$TEMP_TAR"
+    rm -rf "$TEMP_DIR"
 
     echo -e "\033[32mSuccessfully installed Helios v$LATEST_VERSION!\033[0m"
 else
